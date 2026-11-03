@@ -1,0 +1,14 @@
+One paragraph explaining, using your own recovery-time numbers, what dominates the recovery window
+(health-check timing vs. boot/ npm install time vs. something else).
+
+The total recovery time in the lab was recorded as 72.4 seconds The process taking up the most time was
+the boot and the npm install then it has to wait for web services to start before responding to http requests.
+Overall the application startup process takes up a far longer time than the load balencer itself.
+
+
+One paragraph explaining what changed in create_app_stack.sh / delete_app_stack.sh between the previous lab
+and this one — specifically, what replaced the old run-instances call and why.
+
+The major changes in the previous lab to this lab are how the processes get spun up.
+this lab relies on ASG and a ALB instead of EC2 instances that were directly running in the last lab.
+now the infastucutre is managed by a ALB domain that routes reaffic to the targets using AWS to sreplace terminated or failed instanses. 
