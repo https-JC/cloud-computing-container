@@ -1,0 +1,75 @@
+Part A:
+why two upstream calls are needed -
+two services are being used the national weather API only accepts latitude and longitude so a service to translate them is used in this case
+
+weather_success log explanation:
+The log records the successful completion of the zip code lookup documenting the timestamp zip code and request time
+
+Step 3- cache timings and ttl
+A cache miss takes longer because it makes external calls to upstream API's where a cache hit is instant in response. TTLs should be set within a reasonable time for instant access but not too long as weather may change thought the day
+
+step 5 - least privilege IAM
+Assigning granular IAM to least-privilege to ensure that all points are separate if the advisor is compromised an attacker can only access what is needed by the service and in this instance would keep the database password safe.
+
+step 6 - Security Group sources-
+security groups sources are used to segment networks and services in a way that can adapt to IP changes and authorization without relying on static IP ranges
+
+step 7- Pause
+30 seconds prevents incoming HTTP requests from hanging on connection timeouts during a database outage allowing for the application to fail fast.
+
+step 8 -weakness of silent Fallback 
+relying on fallbacks without external monitoring or alerts may be risky because the user never sees an error message and may go unnoticed by the user outside of server logs
+
+step 9 where states should live
+because application states live inside the RDS database instead of an EC2 instance terminating a failed instance allows auto scaling to spin up fresh replacements that can imminently resume and serve cached data
+
+Reflection
+Secrets and management in SSM parameters-
+Storing secrets like database passwords and API keys in AWS SSM parameter store as encrypted values allows for dynamic retrieval at runtime via least privilege roles. this prevents the credentials from being exposed in plaintext environment files or commits or even EC2 launch templates. 
+
+turning off RDS backups-
+turning off RDS backups with a retention set to zero elimates automated snapshot storage fees and allows for the quick teardown of a process during testing. the cost of disabling backups would be the cpmlete loss of point in time recovery. this can be an issue for destructive querys or data currouption if this was to occur there would be no automated backups to fall back on. this should not be used in a full production environment
+
+Data sent to gemini and free-tier
+The application only transmits 5 digit postal codes and a national weather service text such as tempature and wind speed to google because it uses a free api service teir that is used for training data in the future all PII will need to be removed from the promt to ensure data privacy.
+
+15.1 Review Q&A
+-Why must database passwords never be stored in launch template user-data?
+
+Launch template user-data is stored unencrypted in plain text within EC2 and can be inspected by any process or user with basic describe permissions on the instance.
+
+-What is the security advantage of using IAM least-privilege roles per application tier?
+
+It enforces strict isolation so that a compromise of a frontend or backend service does allow an attacker read or write permissions to unrelated cloud resources.
+
+-Why do application security groups reference other security groups instead of static CIDR blocks?
+
+Security group referencing provides dynamic segmentation that automatically tracks changing private IP addresses of instances within authorized tiers without needing hardcoded IP ranges.
+
+-How does restricting RDS ingress exclusively from the application security group protect the database?
+
+It completely isolates the database network interface from the public internet and untrusted subnets, ensuring that only verified application instances running the correct security group can establish a TCP connection.
+
+-Why is using TLS with certificate validation (sslmode=verify-full) mandatory when connecting to RDS?
+
+It encrypts all data in transit across the network and validates the RDS Certificate Authority certificate against the server hostname.
+
+-What protects the Node.js database queries against SQL injection vulnerabilities?
+
+Utilizing parameterized queries ensures user inputs are treated strictly as data rather than executable SQL syntax.
+
+-What are the operational risks of setting backup retention to zero in production?
+
+It permanently disables automated backups and point-in-time recovery. this leaves the database completely vulnerable to data loss from outages.
+
+Why is escaping output data using helpers like escapeHtml() critical in the advisor web UI?
+
+It prevents Cross-Site Scripting attacks by removing malicious injection payloads
+
+-How do rate limiting, cache TTLs, and input validation guard against cloud cost overruns and denial of service?
+
+Caching frequent responses and validating 5-digit zip code regex patterns early rejects malformed traffic to ensure good inputs to the API
+
+-Why must infrastructure teardown scripts be executed in a specific order?
+
+Cloud resources have strict dependency relationships requiring orderly teardown to prevent resource locks.
